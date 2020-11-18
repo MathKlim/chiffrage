@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-
 frames = []
 total_jours = []
 total_paliers = []
@@ -77,7 +76,7 @@ for palier in range(paliers):
     sub_descriptif = pd.DataFrame(
         subtotal_tasks, columns=["palier", "nom", "tache", "jours"]
     )
-    st.dataframe(sub_descriptif)
+    st.table(sub_descriptif)
     frames.append(sub_descriptif)
 
     # calcul du nombre global de jour par palier
@@ -92,7 +91,7 @@ for palier in range(paliers):
 # recap global des taches et paliers
 st.markdown("### Descriptif global des paliers")
 descriptif_global = pd.concat(frames, ignore_index=True)
-st.dataframe(descriptif_global)
+st.table(descriptif_global)
 
 total_jours = np.sum(total_jours)
 st.sidebar.write("Nombre de jours au total pour le projet : ", total_jours)
@@ -172,23 +171,23 @@ for equip in range(nb_equip):
 
 st.markdown("### Récapitulatif équipement")
 descriptif_equip = pd.DataFrame(total_equip, columns=["equipement", "cout"])
-st.dataframe(descriptif_equip)
+st.table(descriptif_equip)
 
 # cout_equip
 total_cost = np.sum(cout_equip)
 st.sidebar.write("Coût total estimé de l'équipement : ", total_cost)
 
-st.markdown("# Coût final")
+st.markdown("# Coût final (Homme + Equipement)")
 
 st.write(
-    "Coût final : ",
+    "Coût final (Homme + Equipement) : ",
     float((total_jours + nb_pilotage + nb_risque) * tjm + total_cost),
 )
 
 
 st.markdown("# Echéancier de paiement")
 st.markdown(
-    "## **ATTENTION** : Par défaut, l'échéancier de paiement ne prend en compte que le coût total pour le projet, risque et pilotage compris. Le coût de l'équipement n'est pris en compte."
+    "## **ATTENTION** : Par défaut, l'échéancier de paiement ne prend en compte que le coût total pour le projet, risque et pilotage compris. Le coût de l'équipement n'est pas pris en compte."
 )
 adhesion = st.number_input(
     "Coût de l'adhésion", min_value=0, max_value=10000, value=2200
@@ -238,4 +237,4 @@ st.markdown("### Récapitulatif des écheances de paiement")
 echeancier = pd.DataFrame(
     total_echeance, columns=["ratio", "descriptif", "montant HT"]
 )
-st.dataframe(echeancier)
+st.table(echeancier)
