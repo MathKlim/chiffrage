@@ -1,8 +1,13 @@
 # import json
 
+import base64
+
 import numpy as np
+import openpyxl
 import pandas as pd
 import streamlit as st
+from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.writer.excel import save_virtual_workbook
 
 frames = []
 total_jours = []
@@ -238,3 +243,45 @@ echeancier = pd.DataFrame(
     total_echeance, columns=["ratio", "descriptif", "montant HT"]
 )
 st.table(echeancier)
+
+
+def to_excel(dfs):
+    wb = openpyxl.Workbook()
+    # ws = wb.active
+    titre_feuille = [
+        "Paliers",
+        "Details",
+        "Equipement",
+        "Echeancier",
+    ]
+    for i, df in enumerate(dfs):
+        wb.create_sheet(index=int(i), title=f"{titre_feuille[i]}")
+        ws = wb[f"{titre_feuille[i]}"]
+        for r in dataframe_to_rows(df, index=True, header=True):
+            ws.append(r)
+
+        for cell in ws["A"] + ws[1]:
+            cell.style = "Pandas"
+    stream = save_virtual_workbook(wb)
+    return stream
+
+
+def get_table_download_link(df):
+    """Generates a link allowing the data in a given panda dataframe to be downloaded
+    in:  dataframe
+    out: href string
+    """
+    val = to_excel(df)
+    b64 = base64.b64encode(
+        val
+    ).decode()  # some strings <-> bytes conversions necessary here
+    href = f'<a href="data:file/csv;base64,{b64}" download="PTF.xlsx">Télécharger la PTF</a>'
+    return href
+
+
+dfs = [descriptif_global, details, descriptif_equip, echeancier]
+
+dl = st.button("Téléchargement")
+
+if dl:
+    st.markdown(get_table_download_link(dfs), unsafe_allow_html=True)
