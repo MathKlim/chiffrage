@@ -1,5 +1,3 @@
-# import json
-
 import base64
 
 import numpy as np
@@ -19,8 +17,22 @@ total_echeance = []
 st.sidebar.image("logo/Logo_CITC_Gris.png", use_column_width=True)
 
 paliers = st.sidebar.number_input("Nombre de paliers", value=1)
-tjm = st.sidebar.number_input("TJM", value=550)
+tjm = st.sidebar.number_input(
+    "Cout mix ingénieur Sénior/Junior (TJH Moyen)", value=550
+)
 
+pilotage = st.sidebar.number_input("Coefficient pilotage", value=0.12)
+risque = st.sidebar.number_input("Coefficient risque", value=0.20)
+
+test_validation = st.sidebar.number_input(
+    "Coefficient test et validation", value=0.20
+)
+
+integration = st.sidebar.number_input("Coefficient intégration", value=0.10)
+
+add_pilotage = st.sidebar.checkbox(
+    "Prendre en compte le pilotage dans le risque ? Non par défaut."
+)
 st.title("Simulateur de coût PTF")
 
 
@@ -73,8 +85,6 @@ for palier in range(paliers):
 
         # liste des nombres de jours par taches
         subtotal_jours.append(jours)
-    # subtotal_jours
-    # subtotal_tasks
 
     # recap des taches pour chaque palier
     st.markdown("### Récapitulatif du palier")
@@ -100,36 +110,39 @@ st.table(descriptif_global)
 
 total_jours = np.sum(total_jours)
 st.sidebar.write("Nombre de jours au total pour le projet : ", total_jours)
-st.sidebar.write("Coût total jour homme : ", total_jours * tjm)
 
-pilotage = st.sidebar.number_input("Coefficient pilotage", value=0.12)
-risque = st.sidebar.number_input("Coefficient risque", value=0.20)
 
 nb_pilotage = float(total_jours * pilotage)
-
-add_pilotage = st.sidebar.checkbox(
-    "Prendre en compte le pilotage dans le risque ? Non par défaut."
-)
+nb_test_validation = float(total_jours * test_validation)
+nb_integration = float(total_jours * integration)
 
 if add_pilotage:
     nb_risque = float((total_jours + nb_pilotage) * risque)
 else:
     nb_risque = float(total_jours * risque)
 
-total_jour_projet = float(total_jours + nb_pilotage + nb_risque)
+total_jour_projet = float(
+    total_jours + nb_pilotage + nb_risque + nb_test_validation + nb_integration
+)
 
 st.sidebar.write("Total de jours pour le pilotage : ", nb_pilotage)
 st.sidebar.write("Total de jours pour le risque : ", nb_risque)
 st.sidebar.write(
-    "Total de jours pour le projet, risque et pilotage compris : ",
+    "Total de jours pour les tests & validations : ", nb_test_validation
+)
+st.sidebar.write("Total de jours pour l'intégration : ", nb_integration)
+st.sidebar.write(
+    "Total de jours pour le projet, pilotage, risque, tests & integration compris : ",
     total_jour_projet,
 )
 
-cout_global = float((total_jours + nb_pilotage + nb_risque) * tjm)
+cout_global_palier = float(total_jour_projet * tjm)
+
+st.sidebar.write("Coût total jour homme : ", total_jours * tjm)
 
 st.sidebar.write(
-    "Coût total pour le projet, risque et pilotage compris : ",
-    cout_global,
+    "Coût total des paliers pour le projet, pilotage, risque, tests & intégration compris : ",
+    cout_global_palier,
 )
 
 details = {
@@ -137,17 +150,86 @@ details = {
     "Coût total jour homme": total_jours * tjm,
     "Coefficient pilotage": pilotage,
     "Coefficient risque": risque,
+    "Coefficient test et validation": test_validation,
+    "Coefficient intégration": integration,
     "Total de jours pour le pilotage": nb_pilotage,
     "Total de jours pour le risque ": nb_risque,
+    "Total de jours pour les tests & validations": nb_test_validation,
+    "Total de jours pour l'intégration": nb_integration,
     "Total de jours total pour le projet": total_jour_projet,
-    "Coût total pour le projet, risque et pilotage compris ": cout_global,
+    "Coût total des paliers pour le projet, risque et pilotage compris ": cout_global_palier,
 }
 details = pd.DataFrame.from_dict(details, orient="index")
-# st.dataframe(details)
 
+st.markdown("# Transverse")
 
+transverse = []
+
+st.markdown("## Documentation")
+
+manuel_utilisateur = st.number_input(
+    "Rédaction du manuel utilisateur", value=0
+)
+
+dossier_conception_deploiement = st.number_input(
+    "Rédaction du dossier de conception et déploiement", value=0
+)
+
+plan_de_test = st.number_input("Rédaction plan de test d'intégration", value=0)
+transverse.append(
+    manuel_utilisateur + dossier_conception_deploiement + plan_de_test
+)
+
+st.markdown("## Maintient en condition opérationnel")
+
+correctif = st.number_input(
+    "Accompagnement sur les correctifs à mettre en place", value=0
+)
+
+st.markdown("## Reversibilité")
+
+formation_reversibilite = st.number_input(
+    "Formation suite à la reversibilité", value=0
+)
+transverse.append((formation_reversibilite + correctif) * pilotage)
+
+acc_reversibilite = st.number_input(
+    "Accompapgnement suite à la reversibilité", value=0
+)
+transverse.append(acc_reversibilite * pilotage)
+
+st.markdown("## Workshop")
+
+reunions = st.number_input(
+    "Réunions de réflexion sur les différents sujets du projet", value=0
+)
+transverse.append(reunions)
+
+st.markdown("## Adaptabilité expérience utilisateur")
+
+ajustement = st.number_input(
+    "Ajustements d'applications, ajout de fonctionnalités", value=0
+)
+transverse.append(ajustement)
+
+st.markdown("## Formations")
+
+utilisateur = st.number_input("Formations utilisateurs", value=0)
+personnel = st.number_input("Formations personnels", value=0)
+doc_formation = st.number_input("Documents formations", value=0)
+transverse.append(utilisateur + personnel + doc_formation)
+
+total_transverse = np.sum(transverse)
+st.info(
+    f"Nombre total de jours pour les activités transverse : {total_transverse}"
+)
+
+cout_global_transverse = total_transverse * tjm
+st.sidebar.write(
+    "Coût total des activités transverses : ",
+    cout_global_transverse,
+)
 st.markdown("# Equipement")
-
 
 nb_equip = st.number_input(
     "Nombre d'équipements à lister",
@@ -179,20 +261,26 @@ descriptif_equip = pd.DataFrame(total_equip, columns=["equipement", "cout"])
 st.table(descriptif_equip)
 
 # cout_equip
-total_cost = np.sum(cout_equip)
-st.sidebar.write("Coût total estimé de l'équipement : ", total_cost)
+cout_global_equipement = np.sum(cout_equip)
+st.sidebar.write(
+    "Coût total estimé de l'équipement : ", cout_global_equipement
+)
 
-st.markdown("# Coût final (Homme + Equipement)")
+st.markdown("# Coût final")
 
-st.write(
-    "Coût final (Homme + Equipement) : ",
-    float((total_jours + nb_pilotage + nb_risque) * tjm + total_cost),
+cout_global = (
+    cout_global_palier + cout_global_transverse + cout_global_equipement
+)
+
+st.markdown(
+    f"## {float(cout_global):.2f} Euros",
 )
 
 
 st.markdown("# Echéancier de paiement")
 st.markdown(
-    "## **ATTENTION** : Par défaut, l'échéancier de paiement ne prend en compte que le coût total pour le projet, risque et pilotage compris. Le coût de l'équipement n'est pas pris en compte."
+    "## **ATTENTION** : Par défaut, l'échéancier de paiement ne prend en compte"
+    " que le coût total pour le projet. Le coût de l'équipement n'est pas pris en compte."
 )
 adhesion = st.number_input(
     "Coût de l'adhésion", min_value=0, max_value=10000, value=2200
@@ -237,7 +325,6 @@ for echeance in range(echeances):
     )
 
 # recap des taches pour chaque palier
-
 st.markdown("### Récapitulatif des écheances de paiement")
 echeancier = pd.DataFrame(
     total_echeance, columns=["ratio", "descriptif", "montant HT"]
